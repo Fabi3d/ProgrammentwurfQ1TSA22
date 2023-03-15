@@ -10,13 +10,13 @@
 #define CYCLE3 10000
 #define CYCLE4 100000
 
-double a;
-double b;
+double a = 5;
+double b = 8;
 
 //zweidimensionales double array mit vier spalten und drei zeilen erstellen und befüllen mit 0
 double array[3][4] = {
 //          T1  T2  T3  T4
-/*add*/    {0,  0,  0,  0},
+/*add*/    {1,  0,  0,  0},
 /*multi*/  {0,  0,  0,  0},
 /*div*/    {0,  0,  0,  0}
 };
@@ -48,8 +48,6 @@ double division(double a, double b){
 //array um funktionen zu speichern
 //double (*fkt[3])(double, double) = {addition, multiplication, division};
 
-typedef double (*func_ptr)(double, double);
-
 //funktion um dieses array auszugeben
 
 void* primary_task() {
@@ -64,7 +62,15 @@ void* primary_task() {
 
         // Sleep for 1 second
         //sleep(1);
+                if (*p2 == 1){
+            addition(a, b);
+        }
+        else{
+            printf("Error");
+        }
+        printf("\n");
         while(((current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000) <= CYCLE1){
+
             gettimeofday(&current_time, NULL);
         }
 
@@ -173,15 +179,7 @@ void init(){
 }
 
 int main() {
-    func_ptr funcs[3] = {addition, multiplication, division};
-    double a = 5.0;
-    double b = 2.0;
 
-    for (int i = 0; i < 3; i++) {
-        double result = funcs[i](a, b);
-        printf(" Result of function %d: %lf\n", i, result);
-    }
-   
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
 
