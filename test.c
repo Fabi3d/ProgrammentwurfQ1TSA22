@@ -13,6 +13,17 @@
 double a;
 double b;
 
+//zweidimensionales double array mit vier spalten und drei zeilen erstellen und befüllen mit 0
+double array[3][4] = {
+//          T1  T2  T3  T4
+/*add*/    {0,  0,  0,  0},
+/*multi*/  {0,  0,  0,  0},
+/*div*/    {0,  0,  0,  0}
+};
+
+//pointer auf den ersten eintral des arrays
+double *p2 = &array[0][0];
+
 double addition(double a, double b){
     double result;
     result = a+b;
