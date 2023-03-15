@@ -10,15 +10,19 @@
 #define CYCLE3 10000
 #define CYCLE4 100000
 
+#define NUM_THREADS 4
+#define NUM_TASKS 3
+
 double a = 5;
 double b = 8;
 
+
 //zweidimensionales double array mit vier spalten und drei zeilen erstellen und befüllen mit 0
-double array[3][4] = {
+double array[NUM_TASKS][NUM_THREADS] = {
 //          T1  T2  T3  T4
-/*add*/    {1,  0,  0,  0},
-/*multi*/  {0,  0,  0,  0},
-/*div*/    {0,  0,  0,  0}
+/*add*/    {1,  1,  0,  0},
+/*multi*/  {0,  0,  1,  1},
+/*div*/    {1,  1,  1,  0}
 };
 
 //pointer auf den ersten eintral des arrays
@@ -62,18 +66,35 @@ void* primary_task() {
 
         // Sleep for 1 second
         //sleep(1);
-                if (*p2 == 1){
-            addition(a, b);
-        }
-        else{
-            printf("Error");
-        }
+   
         printf("\n");
+        if (*p2 == 1){
+            addition(a, b);
+            printf("\n");
+        }
+        p2 = p2 + NUM_THREADS;
+
+        if(*p2 == 1){
+            multiplication(a, b);
+            printf("\n");
+        }
+        p2 = p2 + NUM_THREADS;
+        
+        if(*p2 == 1){
+            division(a, b);
+            printf("\n");
+        }
+      
+        printf("\n");
+        p2 = &array[0][0];
+        //pointer adresse ausgeben
+
         while(((current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000) <= CYCLE1){
 
             gettimeofday(&current_time, NULL);
         }
-
+        //p2 wieder auf den ersten eintrag des arrays setzen
+        
         gettimeofday(&current_time, NULL);
         elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
 
