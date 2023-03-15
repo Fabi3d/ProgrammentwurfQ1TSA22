@@ -20,13 +20,16 @@ double b = 8;
 //zweidimensionales double array mit vier spalten und drei zeilen erstellen und befüllen mit 0
 double array[NUM_TASKS][NUM_THREADS] = {
 //          T1  T2  T3  T4
-/*add*/    {1,  1,  0,  0},
-/*multi*/  {0,  0,  1,  1},
-/*div*/    {1,  1,  1,  0}
+/*add*/    {1,  0,  0,  0},
+/*multi*/  {0,  1,  0,  0},
+/*div*/    {0,  0,  1,  1}
 };
 
 //pointer auf den ersten eintral des arrays
-double *p2 = &array[0][0];
+double *p1 = &array[0][0];
+double *p2 = &array[0][1];
+double *p3 = &array[0][2];
+double *p4 = &array[0][3];
 
 double addition(double a, double b){
     double result;
@@ -49,10 +52,6 @@ double division(double a, double b){
     return result;
 }
 
-//array um funktionen zu speichern
-//double (*fkt[3])(double, double) = {addition, multiplication, division};
-
-//funktion um dieses array auszugeben
 
 void* primary_task() {
     struct timeval start_time, current_time;
@@ -64,10 +63,47 @@ void* primary_task() {
         printf("Primary task running\n");
         fflush(stdout);
 
-        // Sleep for 1 second
-        //sleep(1);
-   
         printf("\n");
+        printf("%lf\n", *p1);
+        if (*p1 == 1){
+            addition(a, b);
+            printf("\n");
+        }
+        p1 = p1 + NUM_THREADS;
+
+        if(*p1 == 1){
+            multiplication(a, b);
+            printf("\n");
+        }
+        p1 = p1 + NUM_THREADS;
+        
+        if(*p1 == 1){
+            division(a, b);
+            printf("\n");
+        }
+      
+        printf("\n");
+        p1 = &array[0][0];
+
+        while(((current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000) <= CYCLE1){
+
+            gettimeofday(&current_time, NULL);
+        }
+     
+        gettimeofday(&current_time, NULL);
+        elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
+
+        printf("Primary task finished in %d ms\n", elapsed_time_ms);
+        fflush(stdout);
+    }
+}
+
+void* secondary_task() {
+    struct timeval start_time, current_time;
+    int elapsed_time_ms = 0;
+
+    printf("\n");
+    p2 = &array[0][1];
         if (*p2 == 1){
             addition(a, b);
             printf("\n");
@@ -86,26 +122,8 @@ void* primary_task() {
         }
       
         printf("\n");
-        p2 = &array[0][0];
-        //pointer adresse ausgeben
+        p2 = &array[0][1];
 
-        while(((current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000) <= CYCLE1){
-
-            gettimeofday(&current_time, NULL);
-        }
-        //p2 wieder auf den ersten eintrag des arrays setzen
-        
-        gettimeofday(&current_time, NULL);
-        elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-
-        printf("Primary task finished in %d ms\n", elapsed_time_ms);
-        fflush(stdout);
-    }
-}
-
-void* secondary_task() {
-    struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
 
     while (1) {
         gettimeofday(&start_time, NULL);
@@ -131,6 +149,29 @@ void* third_task() {
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
 
+        printf("\n");
+        p3 = &array[0][2];
+        if (*p3 == 1){
+            addition(a, b);
+            printf("\n");
+        }
+        p3 = p3 + NUM_THREADS;
+
+        if(*p3 == 1){
+            multiplication(a, b);
+            printf("\n");
+        }
+        p3 = p3 + NUM_THREADS;
+        
+        if(*p3 == 1){
+            division(a, b);
+            printf("\n");
+        }
+      
+        printf("\n");
+        p3 = &array[0][2];
+
+
     while (1) {
         gettimeofday(&start_time, NULL);
         printf("Third task running\n");
@@ -154,6 +195,29 @@ void* third_task() {
 void* fourth_task() {
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
+
+     
+    p4 = &array[0][3];
+    printf("\n");
+        if (*p4 == 1){
+            addition(a, b);
+            printf("\n");
+        }
+        p4 = p4 + NUM_THREADS;
+
+        if(*p4 == 1){
+            multiplication(a, b);
+            printf("\n");
+        }
+        p4 = p4 + NUM_THREADS;
+        
+        if(*p4 == 1){
+            division(a, b);
+            printf("\n");
+        }
+      
+        printf("\n");
+        p4 = &array[0][3];
 
     while (1) {
         gettimeofday(&start_time, NULL);
