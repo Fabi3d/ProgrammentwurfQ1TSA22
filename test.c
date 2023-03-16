@@ -16,6 +16,8 @@
 double a = 5;
 double b = 8;
 
+struct timeval start_time, current_time;
+
 double array[NUM_TASKS][NUM_THREADS] = {
     //          T1  T2  T3  T4
     /*add*/    {3,  0,  0,  0},
@@ -24,10 +26,9 @@ double array[NUM_TASKS][NUM_THREADS] = {
     /*mod*/    {0,  0,  0,  1}
 };
 
-//damit die Threads nicht gleichzeitig starten wird hier eine Funktion erstellt, die die Threads erst startet, wenn 200ms vergangen sind
 void wait_200ms()
 {
-    struct timeval start_time, current_time;
+    //damit die Threads nicht gleichzeitig starten wird hier eine Funktion erstellt, die die Threads erst startet, wenn 200ms vergangen sind
     gettimeofday(&start_time, NULL);
     int elapsed_time = 0;
 
@@ -48,7 +49,7 @@ double addition(double a, double b, int firstRun)
     int func = 1;
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
-        //registration(1, 2, 3); //Thread 1 registriert Task 3 mit Priorität 2
+        registration(3, 2, func); //Thread 3 registriert Task 1 mit Priorität 2
     }
     else{
     double result;
@@ -92,7 +93,7 @@ double modulo(double a, double b, int firstRun)
     int func = 4;
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
-        registration(1, 1, func);
+        //registration(1, 1, func);
     }
     else{
     double result;
@@ -134,10 +135,9 @@ void checkForTasks(int thread, double array[][NUM_THREADS]) {
         
 }
 
-
 void *primary_task()
 {
-    struct timeval start_time, current_time;
+    //struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
 
     while (1)
@@ -162,7 +162,7 @@ void *primary_task()
 
 void *secondary_task()
 {
-    struct timeval start_time, current_time;
+
     int elapsed_time_ms = 0;
 
     while (1)
@@ -188,7 +188,6 @@ void *secondary_task()
 
 void *third_task()
 {
-    struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
 
     while (1)
@@ -212,7 +211,7 @@ void *third_task()
 
 void *fourth_task()
 {
-    struct timeval start_time, current_time;
+    
     int elapsed_time_ms = 0;
 
     while (1)
@@ -251,28 +250,20 @@ void printArray(double array[][NUM_THREADS]) {
 
 void init()
 {
-    // init
-
-    struct timeval start_time, current_time;
-
+ 
     pthread_t thread_id1, thread_id2, thread_id3, thread_id4;
     // Start primary task
     pthread_create(&thread_id1, NULL, primary_task, NULL);
-
     wait_200ms();
-
     // Start secondary task
     pthread_create(&thread_id2, NULL, secondary_task, NULL);
-
     wait_200ms();
-
     // Start third task
     pthread_create(&thread_id3, NULL, third_task, NULL);
-
     wait_200ms();
-
     // Start fourth task
     pthread_create(&thread_id4, NULL, fourth_task, NULL);
+
 
     pthread_join(thread_id1, NULL);
     pthread_join(thread_id2, NULL);
@@ -287,9 +278,7 @@ int main()
     division(a, b, 1);
     modulo(a, b, 1);
 
-    struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
-
+    
     printArray(array);
     init();
 }
