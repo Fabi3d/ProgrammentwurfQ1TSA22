@@ -11,16 +11,17 @@
 #define CYCLE4 100000
 
 #define NUM_THREADS 4
-#define NUM_TASKS 3
+#define NUM_TASKS 4
 
 double a = 5;
 double b = 8;
 
 double array[NUM_TASKS][NUM_THREADS] = {
     //          T1  T2  T3  T4
-    /*add*/    {1,  0,  0,  0},
-    /*multi*/  {1,  1,  0,  0},
-    /*div*/    {1,  0,  1,  0}
+    /*add*/    {3,  0,  0,  0},
+    /*multi*/  {2,  2,  0,  0},
+    /*div*/    {2,  1,  1,  0},
+    /*mod*/    {0,  0,  0,  1}
 };
 
 //damit die Threads nicht gleichzeitig starten wird hier eine Funktion erstellt, die die Threads erst startet, wenn 200ms vergangen sind
@@ -37,13 +38,17 @@ void wait_200ms()
     }
 }
 
-
+void registration(int thread, int priority, int task){
+        printf("\nThread %d registriert Funktion%d mit Priorität %d \n\n", thread, task, priority);
+        array[task-1][thread-1] = priority;
+}
 
 double addition(double a, double b, int firstRun)
 {
+    int func = 1;
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
-        array[0][2] = 1;
+        //registration(1, 2, 3); //Thread 1 registriert Task 3 mit Priorität 2
     }
     else{
     double result;
@@ -53,9 +58,9 @@ double addition(double a, double b, int firstRun)
 }
 }
 
-
 double multiplication(double a, double b, int firstRun)
 {
+    int func = 2;
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
     }
@@ -69,8 +74,10 @@ double multiplication(double a, double b, int firstRun)
 
 double division(double a, double b, int firstRun)
 {
+    int func = 3;
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
+        //registration(4, 3, func);
     }
     else{
     double result;
@@ -80,6 +87,20 @@ double division(double a, double b, int firstRun)
 }
 }
 
+double modulo(double a, double b, int firstRun)
+{
+    int func = 4;
+    if(firstRun == 1){
+        //hier kann eine registrierung der Funktion stattfinden
+        registration(1, 1, func);
+    }
+    else{
+    double result;
+    result = (int)a % (int)b;
+    printf("%lf", result);
+    return result;
+}
+}
 
 void checkForTasks(int thread, double array[][NUM_THREADS]) {
     for(int j = 0; j < NUM_TASKS; j++){
@@ -87,7 +108,7 @@ void checkForTasks(int thread, double array[][NUM_THREADS]) {
         int i;
         for (i = 0; i < NUM_TASKS; i++) {
             if (*p == j+1) {
-                switch(i%3){
+                switch(i%NUM_TASKS){
                     case 0:
                         addition(a, b, 0);
                         printf("\n");
@@ -98,6 +119,10 @@ void checkForTasks(int thread, double array[][NUM_THREADS]) {
                         break;
                     case 2:
                         division(a, b, 0);
+                        printf("\n");
+                        break;
+                    case 3:
+                        modulo(a, b, 0);
                         printf("\n");
                         break;
                 };  
@@ -260,6 +285,7 @@ int main()
     addition(a, b, 1);
     multiplication(a, b, 1);
     division(a, b, 1);
+    modulo(a, b, 1);
 
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
