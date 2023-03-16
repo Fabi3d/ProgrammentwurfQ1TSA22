@@ -43,7 +43,7 @@ double addition(double a, double b, int firstRun)
 {
     if(firstRun == 1){
         //hier kann eine registrierung der Funktion stattfinden
-        //array[0][2] = 1;
+        array[0][2] = 1;
     }
     else{
     double result;
@@ -206,6 +206,21 @@ void *fourth_task()
     }
 }
 
+void printArray(double array[][NUM_THREADS]) {
+    int i, j;
+    printf("Konfiguration:\n\n");
+    printf("Task       1| 2| 3| 4| \n");
+    printf("-----------------------\n");
+    for (i = 0; i < NUM_TASKS; i++) {
+        printf("Func %d:    ", i+1);
+            for (j = 0; j < NUM_THREADS; j++) {
+                printf("%d  ", (int) array[i][j]);
+            }
+        printf("\n-----------------------\n");
+    }
+    printf("\n");
+}
+
 void init()
 {
     // init
@@ -246,5 +261,6 @@ int main()
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
 
+    printArray(array);
     init();
 }
