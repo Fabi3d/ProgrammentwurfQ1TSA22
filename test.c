@@ -19,7 +19,7 @@ double b = 8;
 double array[NUM_TASKS][NUM_THREADS] = {
     //          T1  T2  T3  T4
     /*add*/    {1,  0,  0,  0},
-    /*multi*/  {0,  1,  0,  0},
+    /*multi*/  {1,  1,  0,  0},
     /*div*/    {1,  0,  1,  0}
 };
 
@@ -82,27 +82,30 @@ double division(double a, double b, int firstRun)
 
 
 void checkForTasks(int thread, double array[][NUM_THREADS]) {
-    double *p = &array[0][thread-1];
-    int i;
-    for (i = 0; i < NUM_TASKS; i++) {
-        if (*p == 1) {
-            switch(i%3){
-                case 0:
-                    addition(a, b, 0);
-                    printf("\n");
-                    break;
-                case 1:
-                    multiplication(a, b, 0);
-                    printf("\n");
-                    break;
-                case 2:
-                    division(a, b, 0);
-                    printf("\n");
-                    break;
-            };  
+    for(int j = 0; j < NUM_TASKS; j++){
+        double *p = &array[0][thread-1];
+        int i;
+        for (i = 0; i < NUM_TASKS; i++) {
+            if (*p == j+1) {
+                switch(i%3){
+                    case 0:
+                        addition(a, b, 0);
+                        printf("\n");
+                        break;
+                    case 1:
+                        multiplication(a, b, 0);
+                        printf("\n");
+                        break;
+                    case 2:
+                        division(a, b, 0);
+                        printf("\n");
+                        break;
+                };  
+            }
+            p = p + NUM_THREADS;
         }
-        p = p + NUM_THREADS;
     }
+    
         
 }
 
