@@ -13,6 +13,9 @@
 //array für cycletimes
 int cycleTimes[NUM_TASKS] = {1000, 5000, 10000, 100000};
 
+double averageJitter = 0;
+int counter = 0;
+
 double a = 5;
 double b = 8;
 
@@ -50,6 +53,7 @@ double addition(double a, double b, double firstRun)
     double result;
     result = a + b;
     printf("%lf", result);
+    sleep(5);
     return result;
 }
 }
@@ -139,95 +143,41 @@ void checkForTasks(int thread, double array[][NUM_TASKS]) {
         
 }
 
-void *first_task()
-{
+void* thread_function(void* arg) {
+    int thread_id = *((int*) arg);
     struct timeval start_time, current_time;
     int elapsed_time_ms = 0;
+    int last_elapsed_time_ms = 0;
+    int jitter_ms = 0;
 
     while (1)
     {
         gettimeofday(&start_time, NULL);
-        printf("\nPrimary task running\n\n");
+        printf("\nTask %d running\n\n", thread_id + 1);
         fflush(stdout);
-        checkForTasks(1, array);
+        checkForTasks(thread_id + 1, array);
+
         do
         {
             gettimeofday(&current_time, NULL);
             elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        }while (elapsed_time_ms < cycleTimes[0]);
+        } while (elapsed_time_ms < cycleTimes[thread_id]);
 
-        printf("\nPrimary task finished in %d ms\n", elapsed_time_ms);
+        printf("\nTask %d finished in %d ms\n", thread_id + 1, elapsed_time_ms);
         fflush(stdout);
+        // jitter_ms = elapsed_time_ms - cycleTimes[thread_id];
+        // averageJitter += jitter_ms;
+        // counter++;
+        // printf("\nJitter of Task %d: %d ms  -- average Jitter: %lf\n", thread_id+1, jitter_ms, averageJitter/counter);
+        fflush(stdout);
+        /*if(counter >= 100){
+            printf("\n\nAverage Jitter: %lf\n", averageJitter/counter);
+            while(1);
+        }*/
+        // last_elapsed_time_ms = elapsed_time_ms;
         elapsed_time_ms = 0;
     }
-}
-
-void *second_task()
-{
-    struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
-
-    while (1)
-    {
-        gettimeofday(&start_time, NULL);
-        printf("\nSecondary task running\n\n");
-        fflush(stdout);
-        checkForTasks(2, array);
-        do
-        {
-            gettimeofday(&current_time, NULL);
-            elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        } while (elapsed_time_ms < cycleTimes[1]);
-
-        printf("\nSecondary task finished in %d ms\n", elapsed_time_ms);
-        fflush(stdout);
-        elapsed_time_ms = 0;
-    }
-}
-
-void *third_task()
-{
-    struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
-
-    while (1)
-    {
-        gettimeofday(&start_time, NULL);
-        printf("\nThird task running\n\n");
-        fflush(stdout);
-        checkForTasks(3, array);
-        do
-        {
-            gettimeofday(&current_time, NULL);
-            elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        } while (elapsed_time_ms < cycleTimes[2]);
-
-        printf("\nThird task finished in %d ms\n", elapsed_time_ms);
-        fflush(stdout);
-        elapsed_time_ms = 0;
-    }
-}
-
-void *fourth_task()
-{
-    struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
-
-    while (1)
-    {
-        gettimeofday(&start_time, NULL);
-        printf("\nFourth task running\n\n");
-        fflush(stdout);
-        checkForTasks(4, array);
-        do{
-            gettimeofday(&current_time, NULL);
-            elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        }while (elapsed_time_ms < cycleTimes[3]);
-
-        printf("\nFourth task finished in %d ms\n", elapsed_time_ms);
-        fflush(stdout);
-        elapsed_time_ms = 0;
-    }
+    return NULL;
 }
 
 void printArray(double array[][NUM_TASKS])
@@ -248,17 +198,19 @@ void printArray(double array[][NUM_TASKS])
     }
 }
 
-void init(int num_threads, void* (*task_functions[])(void*)) {
+void init(int num_threads) {
     pthread_t threads[num_threads];
+    int thread_args[num_threads];
     for (int i = 0; i < num_threads; i++) {
-        pthread_create(&threads[i], NULL, task_functions[i], NULL);
+        thread_args[i] = i;
+        pthread_create(&threads[i], NULL, thread_function, &thread_args[i]);
         wait_200ms();
     }
+
     for (int i = 0; i < num_threads; i++) {
         pthread_join(threads[i], NULL);
     }
 }
-
 
 int main()
 {
@@ -268,10 +220,6 @@ int main()
     modulo(a, b, 1);
 
     printArray(array);
-
-    void* (*tasks[])(void*) = { first_task, second_task, third_task, fourth_task };
-    init(4, tasks);
-
-    init(NUM_TASKS, tasks);
+    init(NUM_TASKS);
     return 0;
 }
