@@ -1,0 +1,10 @@
+\chapter{Jitter}
+\label{cha:Worst Case Jitter}
+
+Obwohl Multithreading ein sehr Effizientes Konzept der Informatik ist, kann es sein, dass die Systemauslastung so hoch ist, dass die Threads nicht gleichzeitig ausgeführt werden können. Das kann verschiedene Gründe, wie zum Beispiel der Anzahl der verfügbaren Prozessorkerne, die Auslastung des Arbeitsspeichers etc., haben. Im schlimmsten Fall, sind so wenige Systemressourcen vorhanden, dass alle Threads nacheinander ausgeführt werden müssen. In diesem Fall würde sich der Jitter folgendermaßen berechnen: \newline\newline
+\sum Zykluszeiten
+\par
+In diesem Fall ist der Worst-Case-Jitter also 135 Sekunden. 
+Um die Behauptung zu validieren, dass der Jitter von der Verfügbarkeit von Systemressourcen abhängt, wurde während der Ausführung des Programms ein CPU-Benchmark gestartet. Tatsächlich kannte beobachtet werden, dass die Ausführungszeit der einzelnen Threads teilweise deutlich erhöht wurde. 
+Getestet wurde auf einem MacOS System mit Apple M1 und 16gb RAM. Die maximal zu beobachtende Abweichung ist 99ms. 
+

@@ -8,11 +8,12 @@ bibliography=totoc,				% Literaturverzeichnis ins Inhaltsverzeichnis aufnehmen
 titlepage, 						% Titlepage-Umgebung statt \maketitle
 headsepline, 					% horizontale Linie unter Kolumnentitel
 %abstracton,					% Überschrift beim Abstract einschalten, Abstract muss dazu in {abstract}-Umgebung stehen
-DIV=12,							% Satzspiegeleinstellung, 12 ist Standar bei KOMA%BCOR=6mm,						% Bindekorrektur, die den Seitenspiegel um 6mm nach rechts verschiebt,
+DIV=12,							% Satzspiegeleinstellung, 12 ist Standar bei KOMA
+%BCOR=6mm,						% Bindekorrektur, die den Seitenspiegel um 6mm nach rechts verschiebt,
 cleardoublepage=empty,			% Stil einer leeren eingefügten Seite bei Kapitelwechsel
 parskip,							% Absatzabstand bei Absatzwechsel einfügen
 ngerman
-]{scrbook}			
+]{scrbook}		
 \usepackage{scrhack}
 \usepackage[utf8]{inputenc} 	% ermöglicht die direkte Eingabe von Umlauten
 \usepackage[T1]{fontenc} 		% Ausgabe aller zeichen in einer T1-Codierung (wichtig für die Ausgabe von Umlauten!)
@@ -209,8 +210,9 @@ marginal
 \include{chapter/konzeptentwurf}
 \include{chapter/umsetzung}
 \include{chapter/Bedienung}
-\include{chapter/verifikation}
-\include{chapter/zusammenfassung}
+\include{chapter/WorstCaseJitter}
+%\include{chapter/verifikation}
+%\include{chapter/zusammenfassung}
 
 % ---- Literaturverzeichnis ----------
 \interlinepenalty 10000					% Verhindert einen Umbruch mitten in Literatureinträgen

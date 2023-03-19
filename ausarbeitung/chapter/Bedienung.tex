@@ -21,5 +21,5 @@ Um die Die Zykluszeiten zu ändern muss lediglich in diesem Array die gewünscht
 Um eine Funktion hinzuzufügen muss im ersten Schritt folgender Wert erhöht bzw. erniedrigt werden:
 \newline\texttt{#define NUM_FUNC 5}
 \newline
-Anschließend wird die neue Funktion analog zu den bestehenden Funktionen angelegt. Die Übergabewerte sind hierbei die double Werte a und b und eine int Variable um eine potentielle Selbstregistrierung zu ermöglichen.
+Anschließend wird die neue Funktion analog zu den bestehenden Funktionen angelegt. Die Übergabewerte sind hierbei die double Werte a und b und eine int Variable um eine potentielle Selbstregistrierung zu ermöglichen. Im Array \texttt{double (*fktPointer[NUM_FUNC])(double, double, double)} muss außerdem ein neues Element angelegt werden, das gleich zu benennen ist, wie die erstellte Funktion
 Abschließend muss das Konifgurationsarray um eine (oder mehr) Zeilen erweitert und initialisiert werden. 

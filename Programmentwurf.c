@@ -25,11 +25,11 @@ struct timeval start_time, current_time;
 //in diesem Array werden die Prioritäten der Funktionen gespeichert (1 = höchste Priorität bis 5 = niedrigste Priorität, 0 = nicht registriert)
 double array[NUM_FUNC][NUM_TASKS] = {
     //          T1  T2  T3  T4
-    /*add*/    {3,  0,  0,  0},
-    /*multi*/  {2,  2,  0,  0},
-    /*div*/    {1,  1,  1,  0},
-    /*mod*/    {0,  0,  0,  1},
-    /*div2*/   {0,  3,  0,  0}
+    /*add*/    {1,  0,  0,  0},
+    /*multi*/  {4,  2,  0,  0},
+    /*div*/    {3,  1,  1,  0},
+    /*mod*/    {2,  0,  0,  1},
+    /*div2*/   {5,  3,  0,  0}
 };
 
 //Pausiert das Programm für 200ms. Wird beim starten der Threads verwendet
