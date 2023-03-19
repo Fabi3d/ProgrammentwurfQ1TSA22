@@ -1,0 +1,26 @@
+\chapter{Konzeptentwurf}
+\label{cha:Konzeptentwurf}
+
+Um ein passendes Konzept für die Umsetzung des Programms zu finden, wurden im Voraus einige Überlegungen, vor allem zur Steuerung der zeitlichen Abfolge angestellt.
+Mit dem Konzept des Threadings kann sowohl die zeitliche Abfolge, als auch der Aufruf der einzelnen Funktionen in den Tasks effizient gesteuert werden. 
+
+Die Abbildung  soll Threading bildhaft darstellen\footnote[1]{https://www.baeldung.com/wp-content/uploads/sites/4/2020/07/multithreading.png}	.
+
+\begin{figure}[hbt]				% here, bottom, top
+	\centering						% Zentrierung
+	\includegraphics[width=0.6\linewidth]{images/multithreading}	
+	\label{fig:multithreading}
+	\caption{Threading}
+	{\raggedright
+	 }
+	
+\end{figure}
+
+Der \glqq Main Thread\grqq \space startet mehrere untergeordnete Threads. Alle Threads greifen auf die gleichen Ressourcen und globalen Variablen zu. 
+Da alle Threads gleichzeitig ausgeführt werden, werden auch die Aufgaben in den Threads gleichzeitig ausgeführt.  
+Im Programm werden in den Threads jeweils die einzelnen konfigurierten Funktionen aufgerufen und abgearbeitet. Anschließend wird eine Schleife, die nichts tut, so lange ausgeführt, bis die vorgegebene Zykluszeit abgelaufen ist. Anschließend wird der Task unverzüglich neu gestartet, da er sich in einer Endlosschleife befindet. 
+
+Die Konfiguration der einzelnen Funktionen (es handelt sich in diesem Programm um beispielhafte mathematische Operationen) soll über eine Art \glqq Konfigurationstabelle\grqq\space geregelt werden. Im Programm wird ein 2D-Array erstellt, das den Tasks die Funktionen zuweist. 
+
+Für die Selbstregistrierung von Funktionen in einem Task, wird eine weitere Funktion aufgerufen, die das Konfigurationsarray so manipuliert, dass die angegebene Funktion im jeweiligen Task mit einer bestimmten Priorität ausgeführt wird. 
+Generell ist der Aufbau des Programms variabel gestaltet. So können zum Beispiel beliebig viele Threads (also Tasks) oder Funktionen erstellt werden. 

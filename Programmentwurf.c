@@ -5,12 +5,13 @@
 #include <sys/time.h>
 #include <time.h>
 
-// cycletimes in ms (1s = 1000ms)
+/*Fabian Klotz*/
 
+//Anzahl der Tasks und Funktionen
 #define NUM_TASKS 4
 #define NUM_FUNC 5
 
-//array für cycletimes
+//array für cycletimes der Tasks (in ms)
 int cycleTimes[NUM_TASKS] = {1000, 5000, 10000, 100000};
 
 double averageJitter = 0;
@@ -21,6 +22,7 @@ double b = 8;
 
 struct timeval start_time, current_time;
 
+//in diesem Array werden die Prioritäten der Funktionen gespeichert (1 = höchste Priorität bis 5 = niedrigste Priorität, 0 = nicht registriert)
 double array[NUM_FUNC][NUM_TASKS] = {
     //          T1  T2  T3  T4
     /*add*/    {3,  0,  0,  0},
@@ -30,18 +32,19 @@ double array[NUM_FUNC][NUM_TASKS] = {
     /*div2*/   {0,  3,  0,  0}
 };
 
+//Pausiert das Programm für 200ms. Wird beim starten der Threads verwendet
 void wait_200ms() {
     struct timespec delay = {0, 200000000}; // 200ms in Nanosekunden
-
-    // Pausiere das Programm für 200ms
     nanosleep(&delay, NULL);
 }
 
-void registration(int thread, int priority, int task){
-        printf("\nThread %d registriert Funktion%d mit Priorität %d \n\n", thread, task, priority);
-        array[task-1][thread-1] = priority;
+//Funktion zum registrieren der mathematischen Funktionen
+void registration(int task, int priority, int func){
+        printf("\nTask %d registriert Funktion%d mit Priorität %d \n\n", task, func, priority);
+        array[func-1][task-1] = priority;
 }
 
+//-------------------------Funktionen für die mathematischen Operationen-------------------------
 double addition(double a, double b, double firstRun)
 {
     int func = 1;
@@ -53,7 +56,7 @@ double addition(double a, double b, double firstRun)
     double result;
     result = a + b;
     printf("%lf", result);
-    sleep(5);
+    //usleep(1200000);
     return result;
 }
 }
@@ -125,8 +128,10 @@ double division2(double a, double b, double firstRun)
 }
 }
 
+//Array mit den Funktionspointern
 double (*fktPointer[NUM_FUNC])(double, double, double) = {addition, multiplication, division, modulo, division2};
 
+//Funktion zum überprüfen, ob eine Funktion in einem bestimmten Task ausgeführt werden soll inkl. der richtigen Reihenfolge
 void checkForTasks(int thread, double array[][NUM_TASKS]) {
     for(int j = 0; j < NUM_FUNC; j++){
         double *p = &array[0][thread-1];
@@ -139,16 +144,21 @@ void checkForTasks(int thread, double array[][NUM_TASKS]) {
             p = p + NUM_TASKS;
         }
     }
-    
-        
 }
 
-void* thread_function(void* arg) {
-    int thread_id = *((int*) arg);
+// Funktion für die Threads. Es werden variabel viele Threads erstellt. Die Anzahl der Threads wird in der main-Funktion beim Aufruf festgelegt
+void *thread_function(void *arg)
+{
+    int thread_id = *((int *)arg);
     struct timeval start_time, current_time;
-    int elapsed_time_ms = 0;
-    int last_elapsed_time_ms = 0;
+    long elapsed_time_ms = 0;
+    long last_elapsed_time_ms = 0;
     int jitter_ms = 0;
+
+    /*für die Berechnung des Jitters wird die Zeit gemessen, die der Thread benötigt, um seine Aufgabe zu erledigen
+    diese Zeit wird dann mit der Zeit verglichen, die der Thread benötigen sollte, um seine Aufgabe zu erledigen
+    die Differenz zwischen den beiden Zeiten ist der Jitter
+    die auskommentierten Zeilen einkommentieren, um den Jitter zu berechnen*/
 
     while (1)
     {
@@ -156,30 +166,42 @@ void* thread_function(void* arg) {
         printf("\nTask %d running\n\n", thread_id + 1);
         fflush(stdout);
         checkForTasks(thread_id + 1, array);
-
-        do
+        gettimeofday(&current_time, NULL);
+        elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
+        // printf("elapsed time: %ld\n", elapsed_time_ms);
+        if (elapsed_time_ms > cycleTimes[thread_id])
         {
-            gettimeofday(&current_time, NULL);
-            elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        } while (elapsed_time_ms < cycleTimes[thread_id]);
 
-        printf("\nTask %d finished in %d ms\n", thread_id + 1, elapsed_time_ms);
-        fflush(stdout);
-        // jitter_ms = elapsed_time_ms - cycleTimes[thread_id];
-        // averageJitter += jitter_ms;
-        // counter++;
-        // printf("\nJitter of Task %d: %d ms  -- average Jitter: %lf\n", thread_id+1, jitter_ms, averageJitter/counter);
-        fflush(stdout);
-        /*if(counter >= 100){
-            printf("\n\nAverage Jitter: %lf\n", averageJitter/counter);
-            while(1);
-        }*/
-        // last_elapsed_time_ms = elapsed_time_ms;
-        elapsed_time_ms = 0;
+            printf("Task %d missed deadline\nBreak with %ld ms", thread_id + 1, cycleTimes[thread_id] - elapsed_time_ms % cycleTimes[thread_id]);
+            usleep(1000 * (cycleTimes[thread_id] - elapsed_time_ms % cycleTimes[thread_id]));
+        }
+        else
+        {
+            do
+            {
+                gettimeofday(&current_time, NULL);
+                elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
+            } while (elapsed_time_ms < cycleTimes[thread_id]);
+
+            printf("\nTask %d finished in %ld ms\n", thread_id + 1, elapsed_time_ms);
+            fflush(stdout);
+            /* jitter_ms = elapsed_time_ms - cycleTimes[thread_id];
+             averageJitter += jitter_ms;
+             counter++;
+             printf("\nJitter of Task %d: %d ms  -- average Jitter: %lf\n", thread_id+1, jitter_ms, averageJitter/counter);*/
+            fflush(stdout);
+            /*if(counter >= 100){
+                printf("\n\nAverage Jitter: %lf\n", averageJitter/counter);
+                while(1);
+            }
+            last_elapsed_time_ms = elapsed_time_ms;*/
+            elapsed_time_ms = 0;
+        }
     }
     return NULL;
 }
 
+//Funktion zum ausgeben des Arrays
 void printArray(double array[][NUM_TASKS])
 {
     int i, j;
@@ -199,14 +221,18 @@ void printArray(double array[][NUM_TASKS])
 }
 
 void init(int num_threads) {
+
+//Hier werden die Threads erstellt
     pthread_t threads[num_threads];
     int thread_args[num_threads];
+
     for (int i = 0; i < num_threads; i++) {
         thread_args[i] = i;
-        pthread_create(&threads[i], NULL, thread_function, &thread_args[i]);
+        pthread_create(&threads[i], NULL, thread_function, &thread_args[i]);    //pthread_create() erstellt einen Thread und erwartet als Parameter einen Thread-Pointer, einen Thread-Attribut-Pointer, eine Funktion, die als Thread ausgeführt werden soll und einen Parameter, der an die Funktion übergeben wird
         wait_200ms();
     }
 
+//pthread_join() wartet auf das Ende des Threads (wird benötigt, damit der Thread nicht vorzeitig beendet wird, allerdings wird der Thread in diesem Programm nicht beendet)
     for (int i = 0; i < num_threads; i++) {
         pthread_join(threads[i], NULL);
     }
@@ -214,12 +240,14 @@ void init(int num_threads) {
 
 int main()
 {
+    //erste ausführung der Funktionen, um die Funktionen zu registrieren (falls notwendig)
     addition(a, b, 1);
     multiplication(a, b, 1);
     division(a, b, 1);
     modulo(a, b, 1);
-
+    //hier wird die Konfiguration ausgegeben
     printArray(array);
+    //hier wird die Anzahl der Threads festgelegt und die Funktion init() aufgerufen
     init(NUM_TASKS);
     return 0;
 }
