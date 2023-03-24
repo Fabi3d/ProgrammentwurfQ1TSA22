@@ -78,5 +78,5 @@ void checkForTasks(int thread, double array[][NUM_TASKS]) {
 }
 \end{lstlisting}
 
-Beim Aufruf der Funktion wird der Thread und das Konfigurationsarray übergeben. Eine for-Schleife so oft durchlaufen, wie es Funktionen für die Tasks gibt. Danach wird ein Pointer auf das Array erstellt, der auf den ersten, für den Thread relevanten Eintrag zeigt. 
+Beim Aufruf der Funktion wird der Thread und das Konfigurationsarray übergeben. Eine for-Schleife wird so oft durchlaufen, wie es Funktionen für die Tasks gibt. Danach wird ein Pointer auf das Array erstellt, der auf den ersten, für den Thread relevanten Eintrag zeigt. 
 Es wird eine zweite for-Schleife erstellt, die ebenso so oft durchlaufen wird, wie es relevante Funktionen für die Tasks gibt. Danach wird überprüft, ob der Pointer auf ein Element zeigt, das der Schleifenvariablen der äußeren for-Schleife + 1 entspricht. Sollte das der Fall sein, wird ein Pointerarray aufgerufen, in dem Funktionspointer für die jeweiligen Funktionen hinterlegt sind. Durch die Rest-berechnung, innere Schleifenvariable  modulo  Anzahl der Funktionen wird die richtige Stelle im Array ermittelt und ausgeführt. 
