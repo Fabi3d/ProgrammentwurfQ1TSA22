@@ -114,6 +114,7 @@ void *task_thread(void *arg) {
 
 
 void func1() {
+   // add_function(&tasks[0], func1, 2);
     printf("Function 1\n");
 }
 
