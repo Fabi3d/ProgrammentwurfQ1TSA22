@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #define MAX_TASKS 4
 
@@ -58,18 +59,59 @@ void sort_functions(Task *task) {
 
 void *task_thread(void *arg) {
     Task *task = (Task *)arg;
+    struct timespec sleep_time, remaining_time;
+    long long elapsed_time_ns;
+
+    // initialisiere last_start_time mit der aktuellen Zeit
+    struct timespec last_start_time;
+    clock_gettime(CLOCK_REALTIME, &last_start_time);
+
     while (1) {
+        struct timeval start_time, end_time;
+        gettimeofday(&start_time, NULL);
+
         sort_functions(task);
         Node *curr = task->functions;
         printf("Task %ds\n", task->frequency);
+
         while (curr != NULL) {
+            struct timeval func_start_time, func_end_time;
+            gettimeofday(&func_start_time, NULL);
             curr->func();
+            gettimeofday(&func_end_time, NULL);
+
+            elapsed_time_ns = (func_end_time.tv_sec - func_start_time.tv_sec) * 1000000000LL +
+                (func_end_time.tv_usec - func_start_time.tv_usec) * 1000LL;
+
+            // verzögere die Ausführung der nächsten Funktion um die verbleibende Zeit
+            sleep_time.tv_sec = (task->frequency - elapsed_time_ns / 1000000000) - 1;
+            sleep_time.tv_nsec = 1000000000 - (elapsed_time_ns % 1000000000);
+
+            // Wenn die verbleibende Zeit negativ ist, wird die Funktion sofort ausgeführt
+            if (sleep_time.tv_nsec < 0) {
+                sleep_time.tv_sec = 0;
+                sleep_time.tv_nsec = 0;
+            }
+
+            
+
             curr = curr->next;
         }
+
         printf("\n");
-        sleep(task->frequency); // Pause bis zum nächsten Zyklus
+        nanosleep(&sleep_time, &remaining_time);
+        gettimeofday(&end_time, NULL);
+        long elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000L + (end_time.tv_usec - start_time.tv_usec) / 1000L;
+        printf("Elapsed time: %ld ms\n", elapsed_time);
+
+        // speichere die Startzeit des aktuellen Zyklus
+        last_start_time.tv_sec += task->frequency;
+       // clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &last_start_time, NULL);
+
     }
 }
+
+
 
 void func1() {
     printf("Function 1\n");
@@ -99,7 +141,7 @@ int main() {
     add_function(&tasks[2], func2, 2);
     add_function(&tasks[2], func3, 3);
     add_function(&tasks[2], func4, 4);
-    
+
     add_function(&tasks[3], func1, 3);
     add_function(&tasks[3], func2, 2);
     add_function(&tasks[3], func3, 1);
