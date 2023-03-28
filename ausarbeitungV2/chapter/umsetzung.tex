@@ -1,0 +1,82 @@
+\chapter{Umsetzung}
+\label{cha:Umsetzung}
+\section{pthread}
+Um erste Versuche mit Threading zu starten, wird ein Programm erstellt, das zwei Threads startet. 
+Dabei wurde die Bibliothek 'pthread.h' verwendet. 
+
+\texttt{pthread} steht für ' POSIX Threads' und ist eine API (Application Programming Interface), die es ermöglicht, in C und C++ Threads zu erstellen und zu verwalten. POSIX steht dabei für "Portable Operating System Interface", was bedeutet, dass diese API auf vielen verschiedenen Betriebssystemen verfügbar ist und somit portabel ist. Pthreads werden unter UNIX-basierten Betriebssystemen wie MacOS oder Linux unterstützt. 
+
+Die \texttt{pthread}-API stellt eine Reihe von Funktionen bereit, mit denen Threads erstellt, gesteuert und synchronisiert werden können. Einige wichtige Funktionen der \texttt{pthread}-API sind:
+
+\begin{itemize}
+\item \verb|pthread_create|: Diese Funktion erstellt einen neuen Thread und führt eine bestimmte Funktion aus, die dem Thread als Argument übergeben wird.
+\item \verb|pthread_join|: Diese Funktion blockiert den aufrufenden Thread, bis der angegebene Thread beendet wurde.
+\end{itemize}
+
+Die \texttt{pthread}-API ist sehr leistungsfähig und wird häufig in Anwendungen eingesetzt, die viele gleichzeitig ausgeführte Threads erfordern, wie beispielsweise Serveranwendungen oder Multimedia-Anwendungen\footnote[2]{https://www.cs.cmu.edu/afs/cs/academic/class/15492-f07/www/pthreads.html}. 
+
+
+Im fertigen Programm wird automatisch die richtige Anzahl an Threads erstellt. 
+Die untenstehende for-Schleife wird so oft wiederholt, wie es Tasks im Programm geben soll.
+In der Schleife wird jeweils 200ms gewartet, damit die Threads leicht zeitversetzt laufen, um später die Ausgabe auf der Konsole lesbarer zu machen.
+
+\begin{lstlisting}[language=C]
+pthread_t threads[num_threads];
+int thread_args[num_threads];
+
+for (int i = 0; i < num_threads; i++) {
+	thread_args[i] = i;
+	pthread_create(&threads[i], NULL, thread_function, &thread_args[i]); 
+	wait_200ms();
+}
+\end{lstlisting}
+
+Beim erstellen eines Threads wird immer die \texttt{thread_function} aufgerufen. Hier wird das Grundgerüst der einzelnen Threads festgelegt. Es wird eine \texttt{while(1)}, also eine Endlosschleife angelegt. In dieser Schleife wird zuerst ein Timer gestartet und danach mit einer weiteren Funktion überprüft, ob im Konfigurationsarray eine Funktion für diesen Task hinterlegt ist. Sollte das der Fall sein, werden die Aufgaben je nach Priorität abgearbeitet. Laufen die auszuführenden, konfigurierten Funktionen zu lange, also länger wie die vorgegebene Zykluszeit, wird so lange gewartet, bis der Task wieder regulär an der Reihe ist. 
+
+\section{Konfiguration der Funktionen}
+\subsection{Konfigurationsarray}
+
+Das Konfigurationsarray um die Funktionen den Tasks zuzuordnen ist folgendermaßen aufgebaut:
+\begin{lstlisting}[language=C]
+double array[NUM_FUNC][NUM_TASKS] = {
+    //          T1  T2  T3  T4
+    /*add*/    {3,  0,  0,  0},
+    /*multi*/  {2,  2,  0,  0},
+    /*div*/    {1,  1,  1,  0},
+    /*mod*/    {0,  0,  0,  1},
+    /*div2*/   {0,  3,  0,  0}
+};
+\end{lstlisting}
+
+Wie an den Kommentaren zu sehen ist, geben die Zeilen immer die Funktionen an, welche in den Tasks auf gerufen werden sollen und die Spalten die dazugehörigen Tasks. Die Zahlen stehen hierbei für die Priorität, also die Reihenfolge. (1 = höchste Priorität, 0 = nicht Konfiguriert) 
+
+\subsection{Selbstregistrierung von Funktionen zur Ausführung in einem Task}
+Damit wie gefordert eine Selbstregistrierung der Funktionen zur Ausführung in einem Task (bzw. Thread) ausgeführt werden kann, wird beim Aufruf der mathematischen Funktionen unter anderem ein Übergabewert übermittelt, der dazu führt, dass über eine if-Bedingung eine Funktion \texttt{registration()} aufgerufen wird. Als Übergabewert erwartet diese Funktion den Task, die auszuführende Funktion und die Priorität. 
+\begin{lstlisting}[language=C]
+void registration(int task, int priority, int func){
+        printf("\nTask %d registriert Funktion%d mit Priorität %d \n\n", task, func, priority);
+        array[func-1][task-1] = priority;
+}
+\end{lstlisting}
+
+\subsection{Ausführung der Funktionen in den Tasks}
+
+Die Funktion \texttt{checkForTasks} läuft folgendermaßen ab:
+\begin{lstlisting}[language=C]
+void checkForTasks(int thread, double array[][NUM_TASKS]) {
+    for(int j = 0; j < NUM_FUNC; j++){
+        double *p = &array[0][thread-1];
+        int i;
+        for (i = 0; i < NUM_FUNC; i++) {
+            if (*p == j+1) {
+                fktPointer[i%NUM_FUNC](a, b, 0);
+                printf("\n");
+            }
+            p = p + NUM_TASKS;
+        }
+    }
+}
+\end{lstlisting}
+
+Beim Aufruf der Funktion wird der Thread und das Konfigurationsarray übergeben. Eine for-Schleife wird so oft durchlaufen, wie es Funktionen für die Tasks gibt. Danach wird ein Pointer auf das Array erstellt, der auf den ersten, für den Thread relevanten Eintrag zeigt. 
+Es wird eine zweite for-Schleife erstellt, die ebenso so oft durchlaufen wird, wie es relevante Funktionen für die Tasks gibt. Danach wird überprüft, ob der Pointer auf ein Element zeigt, das der Schleifenvariablen der äußeren for-Schleife + 1 entspricht. Sollte das der Fall sein, wird ein Pointerarray aufgerufen, in dem Funktionspointer für die jeweiligen Funktionen hinterlegt sind. Durch die Rest-berechnung, innere Schleifenvariable  modulo  Anzahl der Funktionen wird die richtige Stelle im Array ermittelt und ausgeführt. 

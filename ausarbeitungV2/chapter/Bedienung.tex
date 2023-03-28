@@ -1,0 +1,25 @@
+\chapter{Bedienung}
+\label{cha:Bedienung}
+
+\section{Kompilierung}
+Zur Kompilierung des vorliegenden Programms muss beachtet werden, dass pthreads nur auf UNIX-basierten Betriebssystemen verfügbar ist. 
+Getestet wurde die Kompilierung ausschließlich in folgendem Docker Container:\newline
+\texttt{leitnerfischerdhbw/es-ubuntu-x86}\newline\newline
+Pthread muss manuell für das Kompilieren hinzugefügt werden. Der Befehl für die Kompilierung lautet als: \newline
+\texttt{gcc -pthread  'Dateiname'}
+
+\section{Änderung der Anzahl auszuführender Tasks}
+Um die Anzahl der Tasks zu ändern muss zuerst folgende Zeile geändert werden und auf die gewünschte Anzahl erhöht oder erniedrigt werden:\newline\texttt{#define NUM_TASKS 4}\newline
+Danach muss die Zykluszeit festgelegt werden. Hierfür wird in diesem Array ein Element mit der gewünschten Zeit hinzugefügt werden (Zeit in ms):
+\newline\texttt{int cycleTimes[NUM_TASKS] = \{1000, 5000, 10000, 100000\};} \newline
+Zusätzlich sollte im Konfigurationsarray eine Spalte mit den gewünschten Funktionen und Priorität zur Ausführung in diesem Task hinzugefügt werden. Sollte das Array nicht erweitert werden, kann es zu unschönen Ergebnissen führen, da die nicht initialisierten Elemente nicht automatisch '0' sind.  
+\section{Änderung der Zykluszeiten der Tasks}
+Um die Die Zykluszeiten zu ändern muss lediglich in diesem Array die gewünschte Zeit geändert werden (Zeit in ms).
+\newline\texttt{int cycleTimes[NUM_TASKS] = \{1000, 5000, 10000, 100000\};} \newline
+
+\section{Hinzufügen von Funktionen}
+Um eine Funktion hinzuzufügen muss im ersten Schritt folgender Wert erhöht bzw. erniedrigt werden:
+\newline\texttt{#define NUM_FUNC 5}
+\newline
+Anschließend wird die neue Funktion analog zu den bestehenden Funktionen angelegt. Die Übergabewerte sind hierbei die double Werte a und b und eine int Variable um eine potentielle Selbstregistrierung zu ermöglichen. Im Array \texttt{double (*fktPointer[NUM_FUNC])(double, double, double)} muss außerdem ein neues Element angelegt werden, das gleich zu benennen ist, wie die erstellte Funktion
+Abschließend muss das Konifgurationsarray um eine (oder mehr) Zeilen erweitert und initialisiert werden. 
