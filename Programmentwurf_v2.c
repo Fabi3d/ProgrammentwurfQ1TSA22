@@ -7,6 +7,7 @@
 
 #define MAX_TASKS 4
 
+//Structure for the lists
 typedef struct node
 {
     void (*func)();
@@ -16,16 +17,60 @@ typedef struct node
 
 typedef struct
 {
-    int frequency;   // in Sekunden
-    Node *functions; // verkettete Liste von Funktionen
+    int frequency;   // frequency in seconds
+    Node *functions; // list of functions
 } Task;
 
+//Array of tasks
 Task tasks[MAX_TASKS] = {
     {.frequency = 1, .functions = NULL},
     {.frequency = 5, .functions = NULL},
     {.frequency = 10, .functions = NULL},
     {.frequency = 100, .functions = NULL}};
 
+void swap(Node *a, Node *b)
+{
+    int temp = a->priority;
+    a->priority = b->priority;
+    b->priority = temp;
+}
+
+
+void bubble_sort(Node **head_ref) {
+    int swapped;
+    Node *ptr1;
+    Node *lptr = NULL;
+    
+    /* Checking for empty list */
+    if (*head_ref == NULL)
+        return;
+ 
+    do
+    {
+        swapped = 0;
+        ptr1 = *head_ref;
+ 
+        while (ptr1->next != lptr)
+        {
+            if (ptr1->priority > ptr1->next->priority)
+            {
+                swap(ptr1, ptr1->next);
+                swapped = 1;
+            }
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    }
+    while (swapped);
+}
+
+/* Funktion zum Swappen von zwei Nodes */
+
+void sort_functions(Task *task)
+{
+    bubble_sort(&task->functions);
+}
+//Function prototypes
 void add_function(Task *task, void (*function)(), int priority)
 {
     Node *new_node = (Node *)malloc(sizeof(Node));
@@ -33,39 +78,9 @@ void add_function(Task *task, void (*function)(), int priority)
     new_node->priority = priority;
     new_node->next = task->functions;
     task->functions = new_node;
+    sort_functions(task);
 }
 
-void insert_sorted(Node **head_ref, Node *new_node)
-{
-    Node *curr;
-    if (*head_ref == NULL || (*head_ref)->priority <= new_node->priority)
-    {
-        new_node->next = *head_ref;
-        *head_ref = new_node;
-    }
-    else
-    {
-        curr = *head_ref;
-        while (curr->next != NULL && curr->next->priority > new_node->priority)
-        {
-            curr = curr->next;
-        }
-        new_node->next = curr->next;
-        curr->next = new_node;
-    }
-}
-
-void sort_functions(Task *task)
-{
-    Node *curr = task->functions;
-    task->functions = NULL;
-    while (curr != NULL)
-    {
-        Node *next = curr->next;
-        insert_sorted(&task->functions, curr);
-        curr = next;
-    }
-}
 
 pthread_mutex_t mutex;
 
@@ -85,10 +100,10 @@ void *task_thread(void *arg)
         printf("Mutex-Initialisierung fehlgeschlagen\n");
         exit(1);
     }
-
+    
     while (1)
     {
-        sort_functions(task);
+        
         Node *curr = task->functions;
         printf("\033[32mTask %ds\033[0m\n", task->frequency);
 
@@ -127,8 +142,20 @@ void *task_thread(void *arg)
 
 void selfRegister(void (*function)(), int priority, int task)
 {
+    void *func = function;
+    //durchlaufe liste und suche nach funktion
+    Node *curr = tasks[task].functions;
+    while (curr != NULL)
+    {
+        if (curr->func == func)
+        {
+            curr->priority = priority;
+            return;
+        }
+        curr = curr->next;
+    }
+    //wenn nicht gefunden, füge sie hinzu
     add_function(&tasks[task], function, priority);
-
 }
 
 void func1()
@@ -149,6 +176,7 @@ void func3()
 void func4()
 {
     printf("Function 4\n");
+    selfRegister(func4, 3, 0);
 }
 
 void cleanup()
@@ -183,7 +211,7 @@ int main()
     signal(SIGINT, exit_handler);
 
     add_function(&tasks[0], func1, 2);
-    add_function(&tasks[0], func2, 1);
+    add_function(&tasks[0], func2, 2);
 
     add_function(&tasks[1], func3, 2);
     add_function(&tasks[1], func4, 1);

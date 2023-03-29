@@ -17,10 +17,9 @@ Die Abbildung  soll Threading bildhaft darstellen\footnote[1]{https://www.baeldu
 \end{figure}
 
 Der \glqq Main Thread\grqq \space startet mehrere untergeordnete Threads. Alle Threads greifen auf die gleichen Ressourcen und globalen Variablen zu. 
-Da alle Threads gleichzeitig ausgeführt werden, werden auch die Aufgaben in den Threads gleichzeitig ausgeführt.  
-Im Programm werden in den Threads jeweils die einzelnen konfigurierten Funktionen aufgerufen und abgearbeitet. Anschließend wird leere Schleife so lange ausgeführt, bis die vorgegebene Zykluszeit abgelaufen ist. Anschließend wird der Task unverzüglich neu gestartet, da er sich in einer Endlosschleife befindet. 
 
-Die Konfiguration der einzelnen Funktionen (es handelt sich in diesem Programm um beispielhafte mathematische Operationen) soll über eine Art \glqq Konfigurationstabelle\grqq\space geregelt werden. Im Programm wird ein 2D-Array erstellt, das den Tasks die Funktionen zuweist. 
-
-Für die Selbstregistrierung von Funktionen in einem Task, wird eine weitere Funktion aufgerufen, die das Konfigurationsarray so manipuliert, dass die angegebene Funktion im jeweiligen Task mit einer bestimmten Priorität ausgeführt wird. 
-Generell ist der Aufbau des Programms variabel gestaltet. So können zum Beispiel beliebig viele Threads (also Tasks) oder Funktionen erstellt werden. 
+Am Anfang des Programms wird definiert, wie viele Tasks (bzw. Threads) es geben soll. Die genannte Anzahl Threads wird draufhin gestartet. Jeder Thread bekommt eine eigene Verkettete Liste, in der die einzelnen ausführbaren Funktionen mit einer Priorität gespeichert werden. Wird eine Funktion zur Liste hinzugefügt, sortiert ein Algorithmus die Funktionen nach Priorität. 
+Die Threads durchlaufen alle die gleiche Funktion, in der durch die Listen iteriert wird und die Funktionen abgearbeitet werden. Anschließend wird der Thread so lange schlafen gelegt, bis der nächste reguläre Zyklus ansteht. 
+Durch die Verwendung von Mutex werden Race-Conditions verhindert.
+Die Threads laufen jeweils in einer Endlosschleife, damit das Programm erste terminiert wird, wenn es der User abbricht. 
+Wird das Programm von außen terminiert, wird der von den Listen allozierte Speicher wieder freigegeben. 
