@@ -1,244 +1,211 @@
+// Tim Schwenzer
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <time.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <pthread.h>
 
-/*Fabian Klotz*/
+// Maximale Anzahl an Tasks --------------------------------------------------------------------------------------------------------------------
+#define MAX_TASKS 4
 
-//Anzahl der Tasks und Funktionen
-#define NUM_TASKS 4
-#define NUM_FUNC 5
+// Erstelle eine Struktur für die verkettete Liste ---------------------------------------------------------------------------------------------
+typedef struct node {
+    void (*func)();         // Funktionszeiger
+    int prioritaet;           // Priorität
+    struct node *next;      // Zeiger auf nächstes Element
+} Node;
 
-//confic für cycletimes der Tasks (in ms)
-int cycleTimes[NUM_TASKS] = {1000, 5000, 10000, 100000};
+// Erstelle eine Struktur für eine Aufgabe -----------------------------------------------------------------------------------------------------
+typedef struct {
+    int frequenz;          // Frequenz in Sekunden
+    Node *funktionen;        // verkettete Liste von Funktionen
+} Task;
 
-double a = 5;
-double b = 8;
-
-struct timeval start_time, current_time;
-
-//in diesem Array werden die Prioritäten der Funktionen gespeichert (1 = höchste Priorität bis 5 = niedrigste Priorität, 0 = nicht registriert)
-double confic[NUM_FUNC][NUM_TASKS] = {
-    //          T1  T2  T3  T4
-    /*add*/    {1,  0,  0,  0},
-    /*multi*/  {4,  2,  0,  0},
-    /*div*/    {3,  1,  1,  0},
-    /*mod*/    {2,  0,  0,  1},
-    /*div2*/   {5,  3,  0,  0}
+// Array für Tasks -----------------------------------------------------------------------------------------------------------------------------
+Task tasks[MAX_TASKS] = {
+    {.frequenz = 1, .funktionen = NULL},
+    {.frequenz = 5, .funktionen = NULL},
+    {.frequenz = 10, .funktionen = NULL},
+    {.frequenz = 100, .funktionen = NULL}
 };
 
-//Pausiert das Programm für 200ms. Wird beim starten der Threads verwendet
-void wait_200ms() {
-    struct timespec delay = {0, 200000000}; // 200ms in Nanosekunden
-    nanosleep(&delay, NULL);
+// Funktion zum hinzufügen von Aufgaben zu Tasks -----------------------------------------------------------------------------------------------
+void add_function(Task *task, void (*function)(), int prioritaet) {
+    Node *new_node = (Node *)malloc(sizeof(Node));
+     // Erstelle neues Element
+    new_node->func = function;             
+    new_node->prioritaet = prioritaet;
+    new_node->next = task->funktionen;
+    task->funktionen = new_node;
 }
 
-//Funktion zum registrieren der mathematischen Funktionen
-void registration(int task, int priority, int func){
-        printf("\nTask %d registriert Funktion%d mit Priorität %d \n\n", task, func, priority);
-        confic[func-1][task-1] = priority;
-}
-
-//-------------------------Funktionen für die mathematischen Operationen-------------------------
-double addition(double a, double b, double firstRun)
-{
-        int func = 1;
-        if (firstRun == 1)
-        {
-            // hier kann eine registrierung der Funktion stattfinden
-            // registration(3, 2, func); //Thread 3 registriert Task 1 mit Priorität 2
+// Funktion um Elemente in die Liste einzufügen ------------------------------------------------------------------------------------------------
+void insert_sorted(Node **head_ref, Node *new_node) {
+    Node *curr;
+    // Falls Liste leer oder Priorität der neuen Aufgabe größer
+    if (*head_ref == NULL || (*head_ref)->prioritaet <= new_node->prioritaet) {         
+        new_node->next = *head_ref;                                                 // Aufgabe wird am Start eingefügt
+        *head_ref = new_node; 
+    // Liste wird durchlaufen bis "richtige" Stelle der Aufgabe gefunden              
+    } else {                                                                        
+        curr = *head_ref;   
+        while (curr->next != NULL && curr->next->prioritaet > new_node->prioritaet) {
+            curr = curr->next;
         }
-        else
-        {
-            double result;
-            result = a + b;
-            printf("%lf", result);
-            usleep(110000);
-            return result;
-        }
-}
-
-double multiplication(double a, double b, double firstRun)
-{
-        int func = 2;
-        if (firstRun == 1)
-        {
-            // hier kann eine Registrierung der Funktion stattfinden
-        }
-        else
-        {
-            double result;
-            result = a * b;
-            printf("%lf", result);
-            return result;
-        }
-}
-
-double division(double a, double b, double firstRun)
-{
-        int func = 3;
-        if (firstRun == 1)
-        {
-            // hier kann eine registrierung der Funktion stattfinden
-            // registration(4, 3, func);
-        }
-        else
-        {
-            if (b == 0)
-            {
-                printf("Division durch 0 nicht möglich");
-                return 0;
-            }
-            double result;
-            result = a / b;
-            printf("%lf", result);
-            return result;
-        }
-}
-
-double modulo(double a, double b, double firstRun)
-{
-        int func = 4;
-        if (firstRun == 1)
-        {
-            // hier kann eine registrierung der Funktion stattfinden
-            // registration(1, 1, func);
-        }
-        else
-        {
-            double result;
-            result = (int)a % (int)b;
-            printf("%lf", result);
-            return result;
-        }
-}
-
-double division2(double a, double b, double firstRun)
-{
-        int func = 5;
-        if (firstRun == 1)
-        {
-            // hier kann eine registrierung der Funktion stattfinden
-            // registration(2, 3, func);
-        }
-        else
-        {
-            if (a == 0)
-            {
-                printf("Division durch 0 nicht möglich");
-                return 0;
-            }
-            double result;
-            result = b / a;
-            printf("%lf", result);
-            return result;
-        }
-}
-
-//Array mit den Funktionspointern
-double (*fktPointer[NUM_FUNC])(double, double, double) = {addition, multiplication, division, modulo, division2};
-
-//Funktion zum überprüfen, ob eine Funktion in einem bestimmten Task ausgeführt werden soll inkl. der richtigen Reihenfolge
-void checkForTasks(int thread, double confic[][NUM_TASKS]) {
-    for(int j = 0; j < NUM_FUNC; j++){
-        double *p = &confic[0][thread-1];
-        int i;
-        for (i = 0; i < NUM_FUNC; i++) {
-            if (*p == j+1) {
-                fktPointer[i%NUM_FUNC](a, b, 0);
-                printf("\n");
-            }
-            p = p + NUM_TASKS;
-        }
+        new_node->next = curr->next;                                                // Aufgabe wird dann eingefügt
+        curr->next = new_node;
     }
 }
 
-// Funktion für die Threads. Es werden variabel viele Threads erstellt. Die Anzahl der Threads wird in der main-Funktion beim Aufruf festgelegt
-void *thread_function(void *arg)
-{
-    int thread_id = *((int *)arg);
-    struct timeval start_time, current_time;
-    long elapsed_time_ms = 0;
-    long last_elapsed_time_ms = 0;
-
-    while (1)
+// Funktion um Aufgaben nach ihrer Priorität zu sortieren --------------------------------------------------------------------------------------
+void sort_functions(Task *task) {
+    Node *curr = task->funktionen;
+    task->funktionen = NULL;
+    while (curr != NULL) {
+        Node *next = curr->next;
+        insert_sorted(&task->funktionen, curr);
+        curr = next;
+    }
+}
+// Funktion, welche es ermöglicht, dasss sich Aufgaben selber in Tasks einfügen können
+void registrierung(void (*function)(), int task, int prioritaet) {
+    void *func = function;
+    //durchlaufe liste und suche nach funktion
+    Node *curr = tasks[task].funktionen;
+    while (curr != NULL)
     {
+        if (curr->func == func)
+        {
+            curr->prioritaet = prioritaet;
+            return;
+        }
+        curr = curr->next;
+    }
+    //wenn nicht gefunden, füge sie hinzu
+    add_function(&tasks[task], function, prioritaet);
+}
+
+// Funktionen werden erstellt die dann von den Tasks ausgeführt werden -------------------------------------------------------------------------
+void func1() {
+    printf("Hier ist Funktion 1\n");  
+    registrierung(func1, 3, 3);
+}
+
+void func2() {
+    printf("Hier ist Funktion 2\n");
+}
+
+void func3() {
+    printf("Hier ist Funktion 3\n");
+}
+
+void func4() {
+    printf("Hier ist Funktion 4\n");
+    registrierung(func4, 1, 3);
+}    
+
+// Funktion, welche von den Thread ausgeführt wird----------------------------------------------------------------------------------------------
+void *task_thread(void *arg) {
+
+    Task *task = (Task *)arg;
+    // Variablen zur Berechnung der Wartezeit
+    struct timespec sleep_time, remaining_time;     
+    long long elapsed_time_ns;
+
+    // Startzeit des letzten Zyklus wird gespeichert
+    struct timespec last_start_time;
+    clock_gettime(CLOCK_REALTIME, &last_start_time);
+
+    // Endlosschleife
+    while (1) {             
+        // Startzeit aktueller Zyklus            
+        struct timeval start_time, end_time;
         gettimeofday(&start_time, NULL);
-        printf("\nTask %d running\n\n", thread_id + 1);
-        fflush(stdout);
-        checkForTasks(thread_id + 1, confic);
-        gettimeofday(&current_time, NULL);
-        elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-        if (elapsed_time_ms > cycleTimes[thread_id])
-        {
-            printf("Task %d missed deadline\nBreak with %ld ms", thread_id + 1, cycleTimes[thread_id] - elapsed_time_ms % cycleTimes[thread_id]);
-            usleep(1000 * (cycleTimes[thread_id] - elapsed_time_ms % cycleTimes[thread_id]));
+
+        // Aufgaben werden nach Prioritäten sortiert
+        sort_functions(task);
+        Node *curr = task->funktionen;
+        // Ausgabe der Frequenz
+        printf("Task %ds\n", task->frequenz);
+
+        // Funktionen werden im akutellen Task ausgeführt
+        while (curr != NULL) {
+            // Startzeit Funktion erfassen
+            struct timeval func_start_time, func_end_time;
+            gettimeofday(&func_start_time, NULL);
+            // Ausführen der Funktion
+            curr->func();
+            // Endzeit erfassen
+            gettimeofday(&func_end_time, NULL);
+            // Zeit welche die Funktion benötigt hat
+            elapsed_time_ns = (func_end_time.tv_sec - func_start_time.tv_sec) * 1000000000LL +
+                (func_end_time.tv_usec - func_start_time.tv_usec) * 1000LL;
+
+            // Warte mit neuer Ausführung um die verbleibende Zeit
+            sleep_time.tv_sec = (task->frequenz - elapsed_time_ns / 1000000000) - 1;
+            sleep_time.tv_nsec = 1000000000 - (elapsed_time_ns % 1000000000);
+
+            // Falls die Zeit "überfällig" ist, wird die Funktion sofort ausgeführt
+            if (sleep_time.tv_nsec < 0) {
+                sleep_time.tv_sec = 0;
+                sleep_time.tv_nsec = 0;
+            }
+            // nächste Funktion
+            curr = curr->next;
         }
-        else
-        {
-            do
-            {
-                gettimeofday(&current_time, NULL);
-                elapsed_time_ms = (current_time.tv_sec - start_time.tv_sec) * 1000 + (current_time.tv_usec - start_time.tv_usec) / 1000;
-            } while (elapsed_time_ms < cycleTimes[thread_id]);
 
-            printf("\nTask %d finished in %ld ms\n", thread_id + 1, elapsed_time_ms);
-            fflush(stdout);
-            elapsed_time_ms = 0;
-        }
-    }
-    return NULL;
-}
+        printf("\n");
+        // Warte bis zur nächsten Ausführung der Aufgaben
+        nanosleep(&sleep_time, &remaining_time);
+        // Erfasse Endzeit des akutellen Zyklus
+        gettimeofday(&end_time, NULL);
+        // Berechne Dauer des aktuellen Zyklus
+        long elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000L + (end_time.tv_usec - start_time.tv_usec) / 1000L;
+        // Ausgabe der Dauer
+        printf("Zeit: %ld ms\n", elapsed_time);
 
-//Funktion zum ausgeben des Arrays
-void printArray(double confic[][NUM_TASKS])
-{
-    int i, j;
-    printf("Konfiguration:\n\n");
-    printf("+----------+-----------+-----------+-----------+-----------+\n");
-    printf("| Funktion | Aufgabe 1 | Aufgabe 2 | Aufgabe 3 | Aufgabe 4 |\n");
-    printf("+----------+-----------+-----------+-----------+-----------+\n");
-    for (i = 0; i < NUM_FUNC; i++)
-    {
-        printf("| %8d |", i + 1);
-        for (j = 0; j < NUM_TASKS; j++)
-        {
-            printf(" %9d |", (int)confic[i][j]);
-        }
-        printf("\n+----------+-----------+-----------+-----------+-----------+\n");
-    }
-}
-
-void init(int num_threads) {
-
-//Hier werden die Threads erstellt
-    pthread_t threads[num_threads];
-    int thread_args[num_threads];
-
-    for (int i = 0; i < num_threads; i++) {
-        thread_args[i] = i;
-        pthread_create(&threads[i], NULL, thread_function, &thread_args[i]);    //pthread_create() erstellt einen Thread und erwartet als Parameter einen Thread-Pointer, einen Thread-Attribut-Pointer, eine Funktion, die als Thread ausgeführt werden soll und einen Parameter, der an die Funktion übergeben wird
-        wait_200ms();
-    }
-
-//pthread_join() wartet auf das Ende des Threads (wird benötigt, damit der Thread nicht vorzeitig beendet wird, allerdings wird der Thread in diesem Programm nicht beendet)
-    for (int i = 0; i < num_threads; i++) {
-        pthread_join(threads[i], NULL);
+        // Startzeit des aktuellen Zyklus wird gespeichert
+        last_start_time.tv_sec += task->frequenz;
     }
 }
 
-int main()
-{
-    //erste ausführung der Funktionen, um die Funktionen zu registrieren (falls notwendig)
-    addition(a, b, 1);
-    multiplication(a, b, 1);
-    division(a, b, 1);
-    modulo(a, b, 1);
-    //hier wird die Konfiguration ausgegeben
-    printArray(confic);
-    //hier wird die Anzahl der Threads festgelegt und die Funktion init() aufgerufen
-    init(NUM_TASKS);
+
+// Main Funktion -------------------------------------------------------------------------------------------------------------------------------
+int main() {
+    // Funktionen hinzufügen zu Tasks
+
+    // Task 1 
+    add_function(&tasks[0], func2, 1);
+    add_function(&tasks[0], func4, 2);
+
+    // Taks 2
+    add_function(&tasks[1], func3, 2); 
+    add_function(&tasks[1], func4, 1);
+
+    // Task 3
+    add_function(&tasks[2], func1, 1);
+    add_function(&tasks[2], func2, 2);
+    add_function(&tasks[2], func3, 3);
+
+    // Task 4
+    add_function(&tasks[3], func1, 3);
+    add_function(&tasks[3], func2, 2);
+    add_function(&tasks[3], func3, 1);
+
+
+    // Threads für jede Aufgabe erstellen
+    pthread_t threads[MAX_TASKS];
+    for (int i = 0; i < MAX_TASKS; i++) {
+        pthread_create(&threads[i], NULL, task_thread, (void *)&tasks[i]);
+    }
+
+    // Warten, bis der Benutzer den Prozess beendet
+    while (1) {
+        sleep(1);
+    }
+    
     return 0;
 }
+
+// Command f ab(rechts) und alles ersetzen
