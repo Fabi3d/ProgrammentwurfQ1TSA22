@@ -6,20 +6,21 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-// Maximale Anzahl an Tasks --------------------------------------------------------------------------------------------------------------------
+// Maximale Anzahl an Tasks
 #define MAX_TASKS 4
 
-// Erstelle eine Struktur für die verkettete Liste ---------------------------------------------------------------------------------------------
+// Strukturen --------------------------------------------------------------------------------------------------------------------------------
+// Erstelle eine Struktur für die verkettete Liste 
 typedef struct node {
     void (*func)();         // Funktionszeiger
-    int prioritaet;           // Priorität
+    int prioritaet;         // Priorität
     struct node *next;      // Zeiger auf nächstes Element
 } Node;
 
-// Erstelle eine Struktur für eine Aufgabe -----------------------------------------------------------------------------------------------------
+// Erstelle eine Struktur für eine Aufgabe 
 typedef struct {
     int frequenz;          // Frequenz in Sekunden
-    Node *funktionen;        // verkettete Liste von Funktionen
+    Node *funktionen;      // verkettete Liste von Funktionen
 } Task;
 
 // Array für Tasks -----------------------------------------------------------------------------------------------------------------------------
@@ -30,7 +31,7 @@ Task tasks[MAX_TASKS] = {
     {.frequenz = 100, .funktionen = NULL}
 };
 
-// Funktion zum hinzufügen von Aufgaben zu Tasks -----------------------------------------------------------------------------------------------
+// Funktion um Aufgaben Tasks hinzuzufügen -----------------------------------------------------------------------------------------------
 void add_function(Task *task, void (*function)(), int prioritaet) {
     Node *new_node = (Node *)malloc(sizeof(Node));
      // Erstelle neues Element
@@ -40,7 +41,7 @@ void add_function(Task *task, void (*function)(), int prioritaet) {
     task->funktionen = new_node;
 }
 
-// Funktion um Elemente in die Liste einzufügen ------------------------------------------------------------------------------------------------
+// Funktion um Aufgaben in die Liste einzufügen ------------------------------------------------------------------------------------------------
 void insert_sorted(Node **head_ref, Node *new_node) {
     Node *curr;
     // Falls Liste leer oder Priorität der neuen Aufgabe größer
@@ -87,22 +88,25 @@ void registrierung(void (*function)(), int task, int prioritaet) {
 }
 
 // Funktionen werden erstellt die dann von den Tasks ausgeführt werden -------------------------------------------------------------------------
-void func1() {
-    printf("Hier ist Funktion 1\n");  
-    registrierung(func1, 3, 3);
+// registrierung (Funktion, Task 0-3, Prioritaet (2 kommt vor 1) )
+void funk_A() {
+    printf("Hier ist Funktion A\n");  
+    //registrierung(funk_A, 0, 0);
 }
 
-void func2() {
-    printf("Hier ist Funktion 2\n");
+void funk_B() {
+    printf("Hier ist Funktion B\n");
+    //registrierung(funk_B, 0, 0);
 }
 
-void func3() {
-    printf("Hier ist Funktion 3\n");
+void funk_C() {
+    printf("Hier ist Funktion C\n");
+    //registrierung(funk_C, 0, 0);
 }
 
-void func4() {
-    printf("Hier ist Funktion 4\n");
-    registrierung(func4, 1, 3);
+void funk_D() {
+    printf("Hier ist Funktion D\n");
+    //registrierung(funk_D, 0, 0);
 }    
 
 // Funktion, welche von den Thread ausgeführt wird----------------------------------------------------------------------------------------------
@@ -176,22 +180,22 @@ int main() {
     // Funktionen hinzufügen zu Tasks
 
     // Task 1 
-    add_function(&tasks[0], func2, 1);
-    add_function(&tasks[0], func4, 2);
+    add_function(&tasks[0], funk_B, 1);
+    add_function(&tasks[0], funk_A, 2);
 
     // Taks 2
-    add_function(&tasks[1], func3, 2); 
-    add_function(&tasks[1], func4, 1);
+    add_function(&tasks[1], funk_C, 2); 
+    add_function(&tasks[1], funk_D, 1);
 
     // Task 3
-    add_function(&tasks[2], func1, 1);
-    add_function(&tasks[2], func2, 2);
-    add_function(&tasks[2], func3, 3);
+    add_function(&tasks[2], funk_A, 1);
+    add_function(&tasks[2], funk_B, 2);
+    add_function(&tasks[2], funk_C, 3);
 
     // Task 4
-    add_function(&tasks[3], func1, 3);
-    add_function(&tasks[3], func2, 2);
-    add_function(&tasks[3], func3, 1);
+    add_function(&tasks[3], funk_A, 3);
+    add_function(&tasks[3], funk_B, 2);
+    add_function(&tasks[3], funk_C, 1);
 
 
     // Threads für jede Aufgabe erstellen
